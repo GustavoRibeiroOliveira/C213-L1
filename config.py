@@ -1,9 +1,23 @@
 import os
+from socket import socket
+from flask_socketio import SocketIO
+
+socketio = SocketIO()
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
-STATIC_FOLDER = os.path.join(BASEDIR, 'app', 'static')
-TEMPLATE_FOLDER = os.path.join(BASEDIR, 'app', 'templates')
+STATIC_FOLDER = os.path.join(BASEDIR, "app", "static")
+TEMPLATE_FOLDER = os.path.join(BASEDIR, "app", "templates")
+
+
+def find_available_port():
+    with socket() as s:
+        s.bind(("", 0))
+        return s.getsockname()[1]
+
+
+HOST = "127.0.0.1"
+PORT = find_available_port()
 
 
 class Config:
@@ -15,6 +29,8 @@ class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = "sqlite:///banco.db"
 
 
-class TestingConfig(Config):
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+class Config:
+    FLASK_DEBUG = 1
+    SECRET_KEY = (
+        "k\x8d-\xbd\xb9\x05\xeax\x92\xd9{H\xf0\x9c\xf9\xde\x91\xc6\xe6\xa8\x14\xf9\x89t"
+    )

@@ -47,6 +47,8 @@ header {
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
+    margin-bottom: 20px;
 }
 
 .central-box {
@@ -56,5 +58,21 @@ header {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     min-width: 300px;
     min-height: 200px;
+    text-align: center;
+}
+
+.flex {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+}
+
+.item {
+    background-color: #1c1c1c;
+    padding: 1rem 1rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     text-align: center;
 }

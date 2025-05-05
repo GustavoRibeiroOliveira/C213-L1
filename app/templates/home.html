@@ -28,13 +28,25 @@
 </header>
 
 <div class="content">
+    <div class="flex">
+        <div class="item"><p><strong>Ganho (K):</strong> <span id="k">{{ k }}</span></p></div>
+        <div class="item"><p><strong>Tau (τ):</strong> <span id="tau">{{ tau }}</span></p></div>
+        <div class="item"><p><strong>Theta (θ):</strong> <span id="theta">{{ theta }}</span></p></div>
+    </div>
     <div class="central-box" id="box-content">
-        <h1>Gráfico do Modelo</h1>
         <div>
             <img src="data:image/png;base64,{{ image_base64 }}" alt="Gráfico">
         </div>
     </div>
 </div>
+<script>
+    const k = document.getElementById('k').value;
+    const tau = document.getElementById('tau').value;
+    const theta = document.getElementById('theta').value;
+    sessionStorage.setItem('k', k);
+    sessionStorage.setItem('tau', tau);
+    sessionStorage.setItem('theta', theta);
+</script>
 
 </body>
 </html>
