@@ -14,9 +14,9 @@ def run_socketio(app, host, port):
 
 if __name__ == "__main__":
     window = webview.create_window(
-        "VIVO RF CHECK",
+        "Projeto Prático C213 - Sistemas Embarcados",
         f"http://{HOST}:{PORT}",
-        min_size=(1200, 700),
+        min_size=(1000, 700),
         maximized=False,
         text_select=True,
     )

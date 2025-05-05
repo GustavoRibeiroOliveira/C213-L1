@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, jsonify
 
-from app.main_process import home_logic, controladores_pid
+from app.main_process import controladores_pid, home_logic
 
 bp = Blueprint("main", __name__)
 
@@ -10,12 +10,24 @@ def home():
     # Obter a imagem em base64 gerada pela lógica
     image_base64, k, tau, theta = home_logic()
 
-    return render_template("home.html", image_base64=image_base64, k=k, tau=tau, theta=theta)
+    return render_template(
+        "home.html", image_base64=image_base64, k=k, tau=tau, theta=theta
+    )
 
 
-@bp.route("/controladores_pid")
-def controladores_pid():
-    # Obter a imagem em base64 gerada pela lógica
-    image_base64 = controladores_pid()
+@bp.route("/gerar_pid", methods=["POST"])
+def gerar_pid():
+    data = request.json
+    k = float(data["k"])
+    tau = float(data["tau"])
+    theta = float(data["theta"])
+    method = data["method"]
 
-    return render_template("home.html", image_base64=image_base64)
+    img_base64, kp, ti, td, overshoot = controladores_pid(k, tau, theta, method)
+    return jsonify({
+        "image": img_base64,
+        "kp": kp,
+        "ti": ti,
+        "td": td,
+        "overshoot": overshoot
+    })

@@ -1,22 +1,19 @@
 import base64
 import io
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 from control import pade, series, step_response, tf
+from scipy.interpolate import interp1d
 
-from app.utils import (
-    carregar_dataset,
-    identificar_fopdt,
-    identification_process,
-    ziegler_nichols_malha_aberta,
-    chr_com_sobre_valor,
-    calcular_overshoot,
-)
+from app.utils import (calcular_overshoot, carregar_dataset,
+                       chr_com_sobre_valor, identificar_fopdt,
+                       identification_process, ziegler_nichols_malha_aberta)
+from config import DESKTOP_FOLDER
 
 
 def home_logic():
-    from scipy.interpolate import interp1d
 
     # Carregar o dataset da mesma pasta
     time_dataset, step, output_dataset = carregar_dataset()
@@ -78,7 +75,7 @@ def home_logic():
     plt.plot(time_dataset, y_sim_fopdt_interp, "b--", label="Referencia")
     plt.plot(time_dataset, y_sim_ident_interp, "m--", label=f"Modelo ({best_method})")
 
-    plt.title(f"Melhor Método: {best_method}")
+    plt.title(f"Gráfico do Método: {best_method}")
     plt.legend()
     plt.xlabel("Tempo (s)")
     plt.ylabel("Temperatura (C°)")
@@ -89,6 +86,8 @@ def home_logic():
         ]
     )
     plt.grid(True)
+    # Salvar o gráfico na área de trabalho
+    plt.savefig(os.path.join(DESKTOP_FOLDER, f"{best_method}.png"))
 
     # Salvar o gráfico em um buffer
     buf = io.BytesIO()
@@ -100,12 +99,43 @@ def home_logic():
     return image_base64, k, tau, theta
 
 
-def controladores_pid(k, tau, theta):
+def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
+    nomes_dos_metodos = {
+        "zn": " Ziegler Nichols",
+        "chr": "CHR (com sobrevalor)"
+    }
+    if method == "zn":
+        kp, ti, td = ziegler_nichols_malha_aberta(k, tau, theta)
+    elif method == "chr":
+        kp, ti, td = chr_com_sobre_valor(k, tau, theta)
 
-    # Ziegler-Nichols Malha Aberta
-    Kp_zn, Ti_zn, Td_zn = ziegler_nichols_malha_aberta(k, tau, theta)
-    overshoot_zn, t_zn, yout_zn = calcular_overshoot(Kp_zn, Ti_zn, Td_zn)
+    overshoot, t, yout = calcular_overshoot(kp, ti, td)
 
-    # CHR com Sobrevalor
-    Kp_chr, Ti_chr, Td_chr = chr_com_sobre_valor(k, tau, theta)
-    overshoot_chr, t_chr, yout_chr = calcular_overshoot(Kp_chr, Ti_chr, Td_chr)
+    # Plotar o gráfico
+    plt.figure(figsize=(6, 4))
+    plt.plot(t, yout, label="Resposta ao Degrau (PID)")
+
+    # Mostrar linha de overshoot
+    y_max = np.max(yout)
+    plt.axhline(y_max, color="red", linestyle="--", label=f"Overshoot: {overshoot:.2f}%")
+
+    plt.title(f"Resposta ao Degrau - Método {nomes_dos_metodos[method]}")
+    plt.xlabel("Tempo (s)")
+    plt.ylabel("Saída")
+    plt.grid(True)
+    plt.legend()
+
+    # Salvar na área de trabalho
+    filename = f"resposta_pid_{nomes_dos_metodos[method]}.png"
+    path = os.path.join(DESKTOP_FOLDER, filename)
+    plt.savefig(path)
+
+    # Salvar em base64 para retornar à interface
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode("utf-8")
+    buf.close()
+    plt.close()
+
+    return image_base64, kp, ti, td, overshoot

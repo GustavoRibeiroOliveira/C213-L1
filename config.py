@@ -1,11 +1,13 @@
 import os
 from socket import socket
+
 from flask_socketio import SocketIO
 
 socketio = SocketIO()
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
+DESKTOP_FOLDER = os.path.join(os.environ["USERPROFILE"], "Desktop")
 STATIC_FOLDER = os.path.join(BASEDIR, "app", "static")
 TEMPLATE_FOLDER = os.path.join(BASEDIR, "app", "templates")
 

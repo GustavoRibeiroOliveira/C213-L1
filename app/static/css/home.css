@@ -31,29 +31,29 @@ header {
     padding: 0.5rem 1.5rem;
     border-radius: 5px;
     transition: background-color 0.3s;
+    background-color: #2a2a2a
 }
 
 .tab.active {
     background-color: #333;
-    color: #00bfff;
+    color: #424eff;
 }
 
 .tab:hover {
-    background-color: #2a2a2a;
+    background-color: #222020;
 }
 
 .content {
-    flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    margin-bottom: 20px;
+    margin: 20px;
 }
 
 .central-box {
     background-color: #1c1c1c;
-    padding: 2rem 3rem;
+    padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     min-width: 300px;
@@ -61,18 +61,110 @@ header {
     text-align: center;
 }
 
-.flex {
-    flex: 1;
+.inputs-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 4px;
+    gap: 12px;
+    margin-bottom: 20px;
 }
 
 .item {
-    background-color: #1c1c1c;
+    background-color: #2b2a2a;
     padding: 1rem 1rem;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     text-align: center;
+}
+
+.btn {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    cursor: pointer;
+    padding: 0.5rem 1.5rem;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    background-color: #2a2a2a;
+    color: white;
+}
+
+.btn.active {
+    background-color: #333;
+    color: #424eff;
+}
+
+.btn:hover {
+    background-color: #222020;
+}
+
+#pid-buttons {
+    position: absolute;
+    top: 120px;
+    right: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    z-index: 10;
+}
+
+.icon-btn {
+    background-color: #2a2a2a;
+    padding: 0.3rem;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+}
+
+.icon-btn:hover {
+    background-color: #222020;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background-color: #1e1e1e;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    min-width: 320px;
+    color: white;
+}
+
+.modal-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 1rem 0;
+}
+
+.modal-inputs label {
+    font-weight: bold;
+}
+
+.modal-inputs input {
+    padding: 0.5rem;
+    border-radius: 5px;
+    border: none;
+    background-color: #2a2a2a;
+    color: white;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
 }

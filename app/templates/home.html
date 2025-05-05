@@ -22,31 +22,64 @@
 
 <header>
     <div class="tabs">
-        <div class="tab active" onclick="switchTab(0)">Identification Process</div>
-        <div class="tab" onclick="switchTab(1)">Aba 2</div>
+        <div class="tab active" onclick="switchTab(0)">Processo de identificação</div>
+        <div class="tab" onclick="switchTab(1)">Controladores PID</div>
     </div>
 </header>
 
 <div class="content">
-    <div class="flex">
-        <div class="item"><p><strong>Ganho (K):</strong> <span id="k">{{ k }}</span></p></div>
-        <div class="item"><p><strong>Tau (τ):</strong> <span id="tau">{{ tau }}</span></p></div>
-        <div class="item"><p><strong>Theta (θ):</strong> <span id="theta">{{ theta }}</span></p></div>
-    </div>
     <div class="central-box" id="box-content">
-        <div>
+        <div id="tab-0-content">
+            <div class="inputs-container">
+                <div class="item"><p><strong>Ganho (K):</strong> <span id="k">{{ k }}</span></p></div>
+                <div class="item"><p><strong>Tau (τ):</strong> <span id="tau">{{ tau }}</span></p></div>
+                <div class="item"><p><strong>Theta (θ):</strong> <span id="theta">{{ theta }}</span></p></div>
+            </div>
             <img src="data:image/png;base64,{{ image_base64 }}" alt="Gráfico">
+        </div>
+        <div id="tab-1-content" style="display: none;">
+            <div id="pid-buttons" style="display: none;">
+                <button class="btn" id="zn" onclick="gerarPID('zn')">Ziegler-Nichols</button>
+                <button class="btn" id="chr" onclick="gerarPID('chr')">CHR com Sobrevalor</button>
+                <button class="btn" id="manual" onclick="gerarPID('manual')">Manual</button>
+            </div>
+            <button class="icon-btn" id="download-btn" title="Baixar Gráfico">
+                <svg width="28px" height="28px" viewBox="0 0 24.00 24.00" fill="none" xmlns="http://www.w3.org/2000/svg"
+                     stroke="#ffffff" transform="matrix(1, 0, 0, 1, 0, 0)rotate(0)">
+                    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                    <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC"
+                       stroke-width="0.672"></g>
+                    <g id="SVGRepo_iconCarrier">
+                        <path d="M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15"
+                              stroke="#ffffff" stroke-width="1.392" stroke-linecap="round"
+                              stroke-linejoin="round"></path>
+                        <path d="M12 3V16M12 16L16 11.625M12 16L8 11.625" stroke="#ffffff" stroke-width="1.392"
+                              stroke-linecap="round" stroke-linejoin="round"></path>
+                    </g>
+                </svg>
+            </button>
+            <div id="pid-resultados"></div>
         </div>
     </div>
 </div>
-<script>
-    const k = document.getElementById('k').value;
-    const tau = document.getElementById('tau').value;
-    const theta = document.getElementById('theta').value;
-    sessionStorage.setItem('k', k);
-    sessionStorage.setItem('tau', tau);
-    sessionStorage.setItem('theta', theta);
-</script>
 
+<!-- Modal -->
+<div id="manual-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <h2>Preencher parâmetros manualmente</h2>
+        <div class="modal-inputs">
+            <label for="manual-kp">Kp:</label>
+            <input type="number" id="manual-kp" step="any">
+            <label for="manual-ti">Ti:</label>
+            <input type="number" id="manual-ti" step="any">
+            <label for="manual-td">Td:</label>
+            <input type="number" id="manual-td" step="any">
+        </div>
+        <div class="modal-buttons">
+            <button class="btn" onclick="fecharModal()">Voltar</button>
+            <button class="btn active" onclick="confirmarManual()">Confirmar</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
