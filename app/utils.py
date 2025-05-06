@@ -3,7 +3,6 @@ import sys
 
 import numpy as np
 from control import pade, series, step_response, tf, feedback
-from scipy.interpolate import interp1d
 from scipy.io import loadmat
 
 
@@ -260,14 +259,14 @@ def chr_com_sobre_valor(k, tau, theta, sobre_valor=1.2):
     return kp, ti, td
 
 
-def calcular_overshoot(kp, ti, td, k, tau, theta, t_max):
+def calcular_overshoot(kp, ti, td, k, tau, theta):
     # Criar o controlador PID: Kp * (1 + 1/(Ti*s) + Td*s)
     s = tf("s")
     pid = kp * (1 + 1 / (ti * s) + td * s)
 
     # Planta (processo) com Padé para o atraso
     planta = k / (tau * s + 1)
-    num_delay, den_delay = pade(theta, 2)
+    num_delay, den_delay = pade(theta, 20)
     atraso = tf(num_delay, den_delay)
 
     planta_com_atraso = series(atraso, planta)
@@ -282,9 +281,6 @@ def calcular_overshoot(kp, ti, td, k, tau, theta, t_max):
     # Cálculo do overshoot
     max_value = np.max(yout)
     final_value = yout[-1]
-    if final_value != 0 and max_value > final_value:
-        overshoot = (max_value - final_value) / final_value * 100
-    else:
-        overshoot = 0.0
+    overshoot = (max_value - final_value) / final_value * 100 if final_value != 0 else 0
 
     return overshoot, tempo, yout

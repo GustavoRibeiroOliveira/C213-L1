@@ -93,7 +93,7 @@ def home_logic():
     return image_base64, k, tau, theta, round(eqms[best_method], 3), time_dataset[-1]
 
 
-def controladores_pid(k, tau, theta, method, last_time, kp=None, ti=None, td=None):
+def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
     nomes_dos_metodos = {
         "zn": "Ziegler Nichols",
         "chr": "CHR (com sobrevalor)",
@@ -104,7 +104,7 @@ def controladores_pid(k, tau, theta, method, last_time, kp=None, ti=None, td=Non
     elif method == "chr":
         kp, ti, td = chr_com_sobre_valor(k, tau, theta)
 
-    overshoot, t, yout = calcular_overshoot(kp, ti, td, k, tau, theta, last_time)
+    overshoot, t, yout = calcular_overshoot(kp, ti, td, k, tau, theta)
 
     # Plotar o gráfico
     plt.figure(figsize=(6, 4))
