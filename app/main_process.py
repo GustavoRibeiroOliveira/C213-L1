@@ -2,12 +2,12 @@ import base64
 import io
 import os
 import matplotlib
+from control import feedback
 
 matplotlib.use("Agg")  # Usa backend sem GUI
 import matplotlib.pyplot as plt
 import numpy as np
 from control import pade, series, step_response, tf
-from scipy.interpolate import interp1d
 
 from app.utils import (
     calcular_overshoot,
@@ -90,6 +90,44 @@ def home_logic():
     image_base64 = base64.b64encode(buf.read()).decode("utf-8")
     buf.close()
 
+    f_identification = tf([k_sun], [tau_sun, 1])
+    num_delay, den_delay = pade(theta_sun, 2)
+
+    delay = tf(num_delay, den_delay)
+    f_identification = series(delay, f_identification)
+
+    # Simular a resposta ao degrau do modelo FOPDT (modelo exato)
+    t_sim_fopdt, y_sim_fopdt = step_response(fopdt_model_with_delay, T=time_dataset)
+    y_sim_fopdt = y_sim_fopdt * step
+
+    # Simular a resposta ao degrau do sistema identificado
+    t_sim_ident, y_sim_ident = step_response(f_identification, T=time_dataset)
+    y_sim_ident = y_sim_ident * step
+
+    # Criar o gráfico
+    plt.figure(figsize=(6, 4))
+    plt.plot(time_dataset, y_sim_fopdt, "b", label="Referencia")
+    plt.plot(time_dataset, y_sim_ident, "m--", label=f"Modelo Sundaresan")
+
+    plt.title(f"K: {k_sun:.2f}, Tau: {tau_sun:.2f}, Theta: {theta_sun:.2f}, Eqm: {eqms['Sundaresan']:.2f}")
+    plt.legend()
+    plt.xlabel("Tempo (s)")
+    plt.ylabel("Temperatura (C°)")
+    plt.ylim(
+        [
+            np.min([y_sim_fopdt, y_sim_ident]) - 1,
+            np.max([y_sim_fopdt, y_sim_ident]) + 10,
+        ]
+    )
+    plt.grid(True)
+    # Salvar o gráfico na área de trabalho
+    plt.savefig(os.path.join(DESKTOP_FOLDER, f"Sundaresan.png"))
+
+    # Salvar o gráfico em um buffer
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.close()
+
     return image_base64, k, tau, theta, round(eqms[best_method], 3), time_dataset[-1]
 
 
@@ -99,40 +137,61 @@ def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
         "chr": "CHR (com sobrevalor)",
         "manual": "Sintonia Manual",
     }
+
     if method == "zn":
         kp, ti, td = ziegler_nichols_malha_aberta(k, tau, theta)
     elif method == "chr":
         kp, ti, td = chr_com_sobre_valor(k, tau, theta)
 
-    overshoot, t, yout = calcular_overshoot(kp, ti, td, k, tau, theta)
+    # Criar função de transferência do controlador PID
+    PID = tf([kp * td, kp, kp / ti], [1, 0])
 
-    # Plotar o gráfico
+    # Sistema de processo (sem controle)
+    G = tf([k], [tau, 1])
+
+    num_delay, den_delay = pade(theta, 6)
+    delay = tf(num_delay, den_delay)
+
+    # Sistema com atraso
+    sistema = series(delay, G)
+
+    # Sistema em malha fechada com PID
+    malha_fechada = feedback(series(PID, sistema), 1)
+
+    # Resposta ao degrau
+    t, y = step_response(malha_fechada)
+    y_max = np.max(y)
+    y_min = np.min(y)
+
+    # Plot
     plt.figure(figsize=(6, 4))
-    plt.plot(t, yout, label="Resposta ao Degrau (PID)")
-
-    # Mostrar linha de overshoot
-    y_max = np.max(yout)
-    plt.axhline(
-        y_max, color="red", linestyle="--", label=f"Overshoot: {overshoot:.2f}%"
-    )
-
-    plt.title(f"Resposta ao Degrau - Método {nomes_dos_metodos[method]}")
-    plt.xlabel("Tempo (s)")
-    plt.ylabel("Saída")
+    plt.plot(t, y, label="PID", color="blue")
+    plt.axhline(y_max, linestyle="--", color="red", label=f"Overshoot ~ {round((y_max - 1) * 100, 2)}%")
     plt.grid(True)
-    plt.legend()
+    plt.legend(loc="lower right")
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Temperatura [°C]")
+    plt.title(f"Sistema com Controle PID - {method}")
 
-    # Salvar na área de trabalho
-    filename = f"resposta_pid_{nomes_dos_metodos[method]}.png"
+    # Garantir que o ylim cobre todo o sinal com 5% de margem
+    margem = 0.05
+    delta = (y_max - y_min) * margem
+    plt.ylim([y_min - delta, y_max + delta])
+
+    # Salvar imagem
+    filename = f"PID_Metodo_{nomes_dos_metodos[method].replace(' ', '')}.png"
     path = os.path.join(DESKTOP_FOLDER, filename)
     plt.savefig(path)
 
-    # Salvar em base64 para retornar à interface
+    # Converter para base64
     buf = io.BytesIO()
     plt.savefig(buf, format="png")
     buf.seek(0)
     image_base64 = base64.b64encode(buf.read()).decode("utf-8")
     buf.close()
     plt.close()
+
+    # Overshoot calculado de forma simples aqui, pode substituir por uma função
+    overshoot = round((y_max - 1) * 100, 2)
 
     return image_base64, kp, ti, td, overshoot

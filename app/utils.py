@@ -261,22 +261,15 @@ def chr_com_sobre_valor(k, tau, theta, sobre_valor=1.2):
 
 def calcular_overshoot(kp, ti, td, k, tau, theta):
     # Criar o controlador PID: Kp * (1 + 1/(Ti*s) + Td*s)
-    s = tf("s")
-    pid = kp * (1 + 1 / (ti * s) + td * s)
+    numerador_PID = [kp * td, kp, kp / ti]
+    denominador_PID = [1, 0]
+    PID = tf(numerador_PID, denominador_PID)
 
-    # Planta (processo) com Padé para o atraso
-    planta = k / (tau * s + 1)
-    num_delay, den_delay = pade(theta, 20)
-    atraso = tf(num_delay, den_delay)
+    # Sistema em malha fechada
+    malha_fechada = feedback(series(PID, sys), 1)
 
-    planta_com_atraso = series(atraso, planta)
-
-    # Sistema em malha fechada com feedback unário
-    sistema_malha_fechada = feedback(series(pid, planta_com_atraso), 1)
-
-    # Simulação da resposta ao degrau
-    tempo = np.arange(0, 31315, 5)
-    tempo, yout = step_response(sistema_malha_fechada, T=tempo)
+    # Resposta ao degrau
+    t, y = step_response(malha_fechada)
 
     # Cálculo do overshoot
     max_value = np.max(yout)
