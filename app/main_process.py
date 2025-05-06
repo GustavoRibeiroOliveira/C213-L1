@@ -1,16 +1,23 @@
 import base64
 import io
 import os
-
+import matplotlib
+matplotlib.use("Agg")  # Usa backend sem GUI
 import matplotlib.pyplot as plt
 import numpy as np
 from control import pade, series, step_response, tf
 from scipy.interpolate import interp1d
 
-from app.utils import (calcular_overshoot, carregar_dataset,
-                       chr_com_sobre_valor, identificar_fopdt,
-                       identification_process, ziegler_nichols_malha_aberta)
+from app.utils import (
+    calcular_overshoot,
+    carregar_dataset,
+    chr_com_sobre_valor,
+    identificar_fopdt,
+    identification_process,
+    ziegler_nichols_malha_aberta,
+)
 from config import DESKTOP_FOLDER
+
 
 
 def home_logic():
@@ -101,15 +108,16 @@ def home_logic():
 
 def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
     nomes_dos_metodos = {
-        "zn": " Ziegler Nichols",
-        "chr": "CHR (com sobrevalor)"
+        "zn": "Ziegler Nichols",
+        "chr": "CHR (com sobrevalor)",
+        "manual": "Sintonia Manual",
     }
     if method == "zn":
         kp, ti, td = ziegler_nichols_malha_aberta(k, tau, theta)
     elif method == "chr":
         kp, ti, td = chr_com_sobre_valor(k, tau, theta)
 
-    overshoot, t, yout = calcular_overshoot(kp, ti, td)
+    overshoot, t, yout = calcular_overshoot(kp, ti, td, k, tau, theta)
 
     # Plotar o gráfico
     plt.figure(figsize=(6, 4))
@@ -117,7 +125,9 @@ def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
 
     # Mostrar linha de overshoot
     y_max = np.max(yout)
-    plt.axhline(y_max, color="red", linestyle="--", label=f"Overshoot: {overshoot:.2f}%")
+    plt.axhline(
+        y_max, color="red", linestyle="--", label=f"Overshoot: {overshoot:.2f}%"
+    )
 
     plt.title(f"Resposta ao Degrau - Método {nomes_dos_metodos[method]}")
     plt.xlabel("Tempo (s)")

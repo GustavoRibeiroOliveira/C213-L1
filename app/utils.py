@@ -2,7 +2,7 @@ import os
 import sys
 
 import numpy as np
-from control import pade, series, step_response, tf
+from control import pade, series, step_response, tf, feedback
 from scipy.interpolate import interp1d
 from scipy.io import loadmat
 
@@ -205,7 +205,17 @@ def carregar_dataset():
     #     return time_dataset, step, output_dataset
     # else:
     #     raise FileNotFoundError(f"Arquivo {file_path} não encontrado.")
-    file_path = os.path.join(os.path.dirname(__file__), "Dataset_Grupo1.mat")
+
+    # Detecta o diretório base, considerando execução com PyInstaller
+    if getattr(sys, "frozen", False):
+        # Executável gerado com PyInstaller
+        base_path = sys._MEIPASS
+        base_path = os.path.join(base_path, "app")
+    else:
+        # Execução normal (modo desenvolvimento)
+        base_path = os.path.dirname(__file__)
+
+    file_path = os.path.join(base_path, "Dataset_Grupo1.mat")
 
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Arquivo {file_path} não encontrado.")
@@ -291,25 +301,31 @@ def chr_com_sobre_valor(k, tau, theta, sobre_valor=1.2):
     return kp, ti, td
 
 
-def calcular_overshoot(kp, ti, td, tau=1, theta=1, t_max=100):
-    # Função de transferência para um FOPDT com atraso (aproximação de Padé)
-    num = [kp]
-    den = [tau, 1]
-    system = tf(num, den)
+def calcular_overshoot(kp, ti, td, k, tau, theta, t_max=100):
+    # Criar o controlador PID: Kp * (1 + 1/(Ti*s) + Td*s)
+    s = tf("s")
+    pid = kp * (1 + 1 / (ti * s) + td * s)
 
-    # Aproximação de Padé para o atraso
-    num_delay, den_delay = pade(theta, 2)  # Aproximação de Padé de 2ª ordem
-    delay = tf(num_delay, den_delay)
+    # Planta (processo) com Padé para o atraso
+    planta = k / (tau * s + 1)
+    num_delay, den_delay = pade(theta, 2)
+    atraso = tf(num_delay, den_delay)
 
-    # Sistema com atraso
-    system_with_delay = series(delay, system)
+    planta_com_atraso = series(atraso, planta)
+
+    # Sistema em malha fechada com feedback unário
+    sistema_malha_fechada = feedback(series(pid, planta_com_atraso), 1)
 
     # Simulação da resposta ao degrau
-    time = np.linspace(0, t_max, 500)
-    time, yout = step_response(system_with_delay, time)
+    tempo = np.linspace(0, t_max, 500)
+    tempo, yout = step_response(sistema_malha_fechada, tempo)
 
-    # Calculando o overshoot
+    # Cálculo do overshoot
     max_value = np.max(yout)
     final_value = yout[-1]
-    overshoot = (max_value - final_value) / final_value * 100  # Percentual de overshoot
-    return overshoot, time, yout
+    if final_value != 0 and max_value > final_value:
+        overshoot = (max_value - final_value) / final_value * 100
+    else:
+        overshoot = 0.0
+
+    return overshoot, tempo, yout

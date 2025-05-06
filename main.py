@@ -2,8 +2,8 @@ import os
 
 import webview
 
-from app import create_app
-from config import HOST, PORT, socketio
+from config import HOST, PORT
+from app import create_app, socketio
 
 app = create_app()
 
@@ -20,6 +20,6 @@ if __name__ == "__main__":
         maximized=False,
         text_select=True,
     )
-    webview.start(run_socketio, (app, HOST, PORT), debug=True)
+    webview.start(run_socketio, (app, HOST, PORT), debug=False)
 
     os._exit(0)

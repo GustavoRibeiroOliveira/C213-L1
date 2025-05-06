@@ -1,15 +1,23 @@
 import os
+import sys
 from socket import socket
-
-from flask_socketio import SocketIO
-
-socketio = SocketIO()
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
+def resource_path(relative_path):
+    """Retorna o caminho absoluto para recurso, funciona com PyInstaller."""
+    if getattr(sys, 'frozen', False):
+        # Executável criado com PyInstaller
+        base_path = sys._MEIPASS
+    else:
+        # Rodando via interpretador normal (dev)
+        base_path = os.path.abspath(".")
+        base_path = os.path.join(base_path, "app")
+    return os.path.join(base_path, relative_path)
+
 DESKTOP_FOLDER = os.path.join(os.environ["USERPROFILE"], "Desktop")
-STATIC_FOLDER = os.path.join(BASEDIR, "app", "static")
-TEMPLATE_FOLDER = os.path.join(BASEDIR, "app", "templates")
+STATIC_FOLDER = resource_path("static")
+TEMPLATE_FOLDER = resource_path("templates")
 
 
 def find_available_port():

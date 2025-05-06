@@ -1,7 +1,10 @@
 from flask import Flask
+from flask_socketio import SocketIO
 
 from app.routes import bp
-from config import STATIC_FOLDER, TEMPLATE_FOLDER, Config, socketio
+from config import STATIC_FOLDER, TEMPLATE_FOLDER, Config
+
+socketio = SocketIO()
 
 
 def create_app(config_class=Config, testing=False):

@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function switchTab(index) {
     const tabs = document.querySelectorAll('.tab');
+    const boxContent = document.getElementById('box-content');
     tabs.forEach((tab, i) => {
         tab.classList.toggle('active', i === index);
     });
@@ -28,6 +29,10 @@ function switchTab(index) {
 
     if (index === 1){
         document.getElementById('zn').click()
+        boxContent.style['margin-right'] = '120px';
+    }
+    else {
+        boxContent.style['margin-right'] = '0px';
     }
 }
 
@@ -68,19 +73,19 @@ function gerarPID(method) {
 
         document.getElementById('pid-resultados').innerHTML = html;
 
-        // Mostrar botão de download
-        const downloadBtn = document.getElementById('download-btn');
-        downloadBtn.style.display = 'inline-block';
-
-        // Atualizar função do botão para baixar a imagem
-        downloadBtn.onclick = () => {
-            const a = document.createElement('a');
-            a.href = `data:image/png;base64,${imgBase64}`;
-            a.download = `grafico_pid_${method}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        };
+        // // Mostrar botão de download
+        // const downloadBtn = document.getElementById('download-btn');
+        // downloadBtn.style.display = 'inline-block';
+        //
+        // // Atualizar função do botão para baixar a imagem
+        // downloadBtn.onclick = () => {
+        //     const a = document.createElement('a');
+        //     a.href = `data:image/png;base64,${imgBase64}`;
+        //     a.download = `grafico_pid_${method}.png`;
+        //     document.body.appendChild(a);
+        //     a.click();
+        //     document.body.removeChild(a);
+        // };
 
     }).catch(error => {
         console.error("Erro ao gerar PID:", error);
@@ -106,6 +111,62 @@ function fecharModal() {
     document.getElementById('manual-modal').style.display = 'none';
 }
 
+function gerarPidManual(kp, ti, td) {
+    const k = document.getElementById('k').innerText;
+    const tau = document.getElementById('tau').innerText;
+    const theta = document.getElementById('theta').innerText;
+
+    coloca_botao_pid_como_ativo('manual')
+
+    axios.post("/gerar_pid", {
+        k: k,
+        tau: tau,
+        theta: theta,
+        method: 'manual',
+        kp: kp,
+        ti: ti,
+        td: td
+    }).then(response => {
+        const imgBase64 = response.data.image;
+        const kp = response.data.kp.toFixed(3);
+        const ti = response.data.ti.toFixed(3);
+        const td = response.data.td.toFixed(3);
+        const overshoot = response.data.overshoot.toFixed(2);
+
+        const html = `
+            <div class="inputs-container">
+                <div class="item"><span><strong>Kp:</strong> ${kp}<span></div>
+                <div class="item"><span><strong>Ti:</strong> ${ti}</span></div>
+                <div class="item"><span><strong>Td:</strong> ${td}</span></div>
+                <div class="item"><span><strong>Overshoot:</strong> ${overshoot}%</span></div>
+            </div>
+            <img id="pid-img" src="data:image/png;base64,${imgBase64}" alt="Resposta PID" style="max-width: 100%;">
+        `;
+
+        document.getElementById('pid-resultados').innerHTML = html;
+
+        // // Mostrar botão de download
+        // const downloadBtn = document.getElementById('download-btn');
+        // downloadBtn.style.display = 'inline-block';
+        //
+        // // Atualizar função do botão para baixar a imagem
+        // downloadBtn.onclick = () => {
+        //     const a = document.createElement('a');
+        //     a.href = `data:image/png;base64,${imgBase64}`;
+        //     a.download = `grafico_pid_${method}.png`;
+        //     document.body.appendChild(a);
+        //     a.click();
+        //     document.body.removeChild(a);
+        // };
+
+        fecharModal();
+
+    }).catch(error => {
+        console.error("Erro ao gerar PID:", error);
+        alert("Erro ao gerar o gráfico PID.");
+    });
+}
+
 function confirmarManual() {
     const kp = parseFloat(document.getElementById('manual-kp').value);
     const ti = parseFloat(document.getElementById('manual-ti').value);
@@ -115,16 +176,5 @@ function confirmarManual() {
         alert("Por favor, preencha todos os campos corretamente.");
         return;
     }
-
-    // Aqui você pode usar esses valores como quiser, exibir no HTML, enviar para backend etc.
-    const html = `
-        <div class="inputs-container">
-            <div class="item"><span><strong>Kp:</strong> ${kp}</span></div>
-            <div class="item"><span><strong>Ti:</strong> ${ti}</span></div>
-            <div class="item"><span><strong>Td:</strong> ${td}</span></div>
-        </div>
-    `;
-    document.getElementById('pid-resultados').innerHTML = html;
-
-    fecharModal();
+    gerarPidManual(kp, ti, td);
 }

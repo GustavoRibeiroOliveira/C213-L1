@@ -22,12 +22,18 @@ def gerar_pid():
     tau = float(data["tau"])
     theta = float(data["theta"])
     method = data["method"]
+    if method == "manual":
+        kp = float(data["kp"])
+        ti = float(data["ti"])
+        td = float(data["td"])
+    else:
+        kp = None
+        ti = None
+        td = None
 
-    img_base64, kp, ti, td, overshoot = controladores_pid(k, tau, theta, method)
-    return jsonify({
-        "image": img_base64,
-        "kp": kp,
-        "ti": ti,
-        "td": td,
-        "overshoot": overshoot
-    })
+    img_base64, kp, ti, td, overshoot = controladores_pid(
+        k, tau, theta, method, kp, ti, td
+    )
+    return jsonify(
+        {"image": img_base64, "kp": kp, "ti": ti, "td": td, "overshoot": overshoot}
+    )
