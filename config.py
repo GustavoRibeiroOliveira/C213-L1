@@ -4,9 +4,10 @@ from socket import socket
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
+
 def resource_path(relative_path):
     """Retorna o caminho absoluto para recurso, funciona com PyInstaller."""
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         # Executável criado com PyInstaller
         base_path = sys._MEIPASS
     else:
@@ -14,6 +15,7 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
         base_path = os.path.join(base_path, "app")
     return os.path.join(base_path, relative_path)
+
 
 DESKTOP_FOLDER = os.path.join(os.environ["USERPROFILE"], "Desktop")
 STATIC_FOLDER = resource_path("static")

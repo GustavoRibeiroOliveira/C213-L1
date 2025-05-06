@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 from scipy.io import loadmat
 
 
-def identificar_fopdt(input_dataset, time_dataset, output_dataset):
+def identificar_fopdt(step, time_dataset, output_dataset):
     """
     Identifica um modelo de processo de primeira ordem com atraso (FOPDT - First Order Plus Dead Time)
     a partir dos dados fornecidos.
@@ -46,22 +46,12 @@ def identificar_fopdt(input_dataset, time_dataset, output_dataset):
         modelo = identificar_fopdt(input_data, time_data, output_data)
         print(modelo)
     """
-
-    # Verifica se os tamanhos dos datasets coincidem
-    if len(input_dataset) != len(output_dataset) or len(input_dataset) != len(
-        time_dataset
-    ):
-        raise ValueError(
-            "Os datasets de entrada, tempo e saída devem ter o mesmo tamanho."
-        )
-
     # Cálculo do ganho estático K
-    amplitude_degrau = np.mean(input_dataset)
     valor_inicial = output_dataset[0]
 
     # Padroniza a saída
     output_padronizado = output_dataset - valor_inicial
-    K = output_padronizado[-1] / amplitude_degrau
+    K = output_padronizado[-1] / step
 
     # Estimativa do tempo morto (theta)
     idx_mudanca = np.where(output_dataset != output_dataset[0])[0][0] - 1
@@ -76,7 +66,7 @@ def identificar_fopdt(input_dataset, time_dataset, output_dataset):
     g = tf([K], [tau, 1])  # G(s) = K / (τs + 1)
 
     # Aproximação de Padé para o atraso
-    num_delay, den_delay = pade(theta, 2)  # Ordem 1 (pode usar 2 para mais precisão)
+    num_delay, den_delay = pade(theta, 6)
     delay = tf(num_delay, den_delay)
 
     # Sistema com atraso aproximado
@@ -106,59 +96,46 @@ def identification_process(step, time, output, method):
       - identification (dict) Dictionary containing the identified system parameters.
     """
     # Calcular o ganho estático K
-    amplitude_degrau = np.mean(step)
     valor_inicial = output[0]
     output_padronizado = output - valor_inicial
-    k = output_padronizado[-1] / amplitude_degrau
+    k = output_padronizado[-1] / step
 
     if method == "Smith":
-        # Calcular a constante de tempo (tau)
         val1 = 0.283 * output_padronizado[-1]
-        indice1 = np.where(output_padronizado >= val1)[0][0]
-        t1 = time[indice1]
         val2 = 0.632 * output_padronizado[-1]
-        indice2 = np.where(output_padronizado >= val2)[0][0]
-        t2 = time[indice2]
-        tau = (t2 - t1) * 1.5
-
-        # Estimativa do atraso de tempo (theta)
-        theta = t2 - tau
-    else:
-        # Calcular a constante de tempo (tau)
+    else:  # Sundaresan
         val1 = 0.353 * output_padronizado[-1]
-        indice1 = np.where(output_padronizado >= val1)[0][0]
-        t1 = time[indice1]
         val2 = 0.853 * output_padronizado[-1]
-        indice2 = np.where(output_padronizado >= val2)[0][0]
-        t2 = time[indice2]
-        tau = (t2 - t1) * (2 / 3)
 
-        # Estimativa do atraso de tempo (theta)
+    index1 = np.where(output_padronizado >= val1)[0][0]
+    index2 = np.where(output_padronizado >= val2)[0][0]
+    t1 = time[index1]
+    t2 = time[index2]
+
+    if method == "Smith":
+        tau = (t2 - t1) * 1.5
+        theta = t2 - tau
+    else:  # Sundaresan
+        tau = (t2 - t1) * (2 / 3)
         theta = (1.3 * t1) - (0.29 * t2)
 
     # Parte sem atraso
-    G = tf([k], [tau, 1])  # G(s) = K / (tau*s + 1)
+    G = tf([k], [tau, 1])
 
     # Aproximação de Padé para o atraso
-    num_delay, den_delay = pade(theta, 2)  # Ordem 1 (pode usar 2 para mais precisão)
+    num_delay, den_delay = pade(theta, 6)
     delay = tf(num_delay, den_delay)
 
     # Sistema com atraso aproximado
     f_identification = series(delay, G)
-    # f_ref = identificar_fopdt(step, time, output)
 
     # Simular a resposta ao degrau do sistema identificado
     t_sim, y_sim = step_response(f_identification, T=time)
-
-    # Interpolação para alinhar os tempos simulados com os tempos reais
-    interp_sim = interp1d(t_sim, y_sim, kind="linear", fill_value="extrapolate")
-    y_sim_interp = interp_sim(time)
-
-    # Ajustar nível inicial do output real
-    output_ref = output - output[0]
+    y_sim = y_sim * step
 
     # Calcular EQM
-    eqm = np.mean((output_ref - y_sim_interp) ** 2)
+    output_ref = output - output[0]
+    eqm = np.sqrt(np.mean((output_ref - y_sim) ** 2))
 
     return k, tau, theta, eqm
 
@@ -188,24 +165,6 @@ def carregar_dataset():
     Exemplo:
         time, step, temperature = carregar_dataset()
     """
-    # file_path = os.path.join(os.path.dirname(__file__), "Dataset_Grupo1.mat")
-    #
-    # if os.path.exists(file_path):
-    #     data = loadmat(file_path)
-    #
-    #     # Verificar as chaves do arquivo para entender sua estrutura
-    #     print("Chaves do arquivo .mat:", data.keys())
-    #
-    #     data = data['reactionExperiment']
-    #     step = data["TARGET_DATA____Degrau"]
-    #     output_dataset = data["TARGET_DATA____Temperatura"]
-    #     time_dataset = step[:, 0]  # tempo vem da primeira coluna
-    #     step = step[:, 1]  # valor do degrau
-    #     output_dataset = output_dataset[:, 1]  # valor da temperatura
-    #     return time_dataset, step, output_dataset
-    # else:
-    #     raise FileNotFoundError(f"Arquivo {file_path} não encontrado.")
-
     # Detecta o diretório base, considerando execução com PyInstaller
     if getattr(sys, "frozen", False):
         # Executável gerado com PyInstaller
@@ -237,7 +196,7 @@ def carregar_dataset():
     units = reaction_data["units"]
 
     sample_time = sample_time.astype(np.float64)
-    return sample_time, data_input, data_output
+    return sample_time, np.mean(data_input), data_output
 
 
 def ziegler_nichols_malha_aberta(k, tau, theta):
@@ -301,7 +260,7 @@ def chr_com_sobre_valor(k, tau, theta, sobre_valor=1.2):
     return kp, ti, td
 
 
-def calcular_overshoot(kp, ti, td, k, tau, theta, t_max=100):
+def calcular_overshoot(kp, ti, td, k, tau, theta, t_max):
     # Criar o controlador PID: Kp * (1 + 1/(Ti*s) + Td*s)
     s = tf("s")
     pid = kp * (1 + 1 / (ti * s) + td * s)
@@ -317,8 +276,8 @@ def calcular_overshoot(kp, ti, td, k, tau, theta, t_max=100):
     sistema_malha_fechada = feedback(series(pid, planta_com_atraso), 1)
 
     # Simulação da resposta ao degrau
-    tempo = np.linspace(0, t_max, 500)
-    tempo, yout = step_response(sistema_malha_fechada, tempo)
+    tempo = np.arange(0, 31315, 5)
+    tempo, yout = step_response(sistema_malha_fechada, T=tempo)
 
     # Cálculo do overshoot
     max_value = np.max(yout)

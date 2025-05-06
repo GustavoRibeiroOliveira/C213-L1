@@ -41,6 +41,7 @@ function gerarPID(method) {
     const k = document.getElementById('k').innerText;
     const tau = document.getElementById('tau').innerText;
     const theta = document.getElementById('theta').innerText;
+    const lastTime = document.getElementById('last_time').innerText;
 
     if (method === 'manual') {
         abrirModal();
@@ -53,7 +54,8 @@ function gerarPID(method) {
         k: k,
         tau: tau,
         theta: theta,
-        method: method
+        method: method,
+        last_time: lastTime
     }).then(response => {
         const imgBase64 = response.data.image;
         const kp = response.data.kp.toFixed(3);
@@ -115,6 +117,7 @@ function gerarPidManual(kp, ti, td) {
     const k = document.getElementById('k').innerText;
     const tau = document.getElementById('tau').innerText;
     const theta = document.getElementById('theta').innerText;
+    const lastTime = document.getElementById('last_time').innerText;
 
     coloca_botao_pid_como_ativo('manual')
 
@@ -125,7 +128,8 @@ function gerarPidManual(kp, ti, td) {
         method: 'manual',
         kp: kp,
         ti: ti,
-        td: td
+        td: td,
+        last_time: lastTime
     }).then(response => {
         const imgBase64 = response.data.image;
         const kp = response.data.kp.toFixed(3);

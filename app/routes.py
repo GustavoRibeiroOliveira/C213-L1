@@ -8,10 +8,10 @@ bp = Blueprint("main", __name__)
 @bp.route("/")
 def home():
     # Obter a imagem em base64 gerada pela lógica
-    image_base64, k, tau, theta = home_logic()
+    image_base64, k, tau, theta, eqm, last_time = home_logic()
 
     return render_template(
-        "home.html", image_base64=image_base64, k=k, tau=tau, theta=theta
+        "home.html", image_base64=image_base64, k=k, tau=tau, theta=theta, eqm=eqm, last_time=last_time
     )
 
 
@@ -22,6 +22,7 @@ def gerar_pid():
     tau = float(data["tau"])
     theta = float(data["theta"])
     method = data["method"]
+    last_time = float(data["last_time"])
     if method == "manual":
         kp = float(data["kp"])
         ti = float(data["ti"])
@@ -32,7 +33,7 @@ def gerar_pid():
         td = None
 
     img_base64, kp, ti, td, overshoot = controladores_pid(
-        k, tau, theta, method, kp, ti, td
+        k, tau, theta, method, last_time, kp, ti, td,
     )
     return jsonify(
         {"image": img_base64, "kp": kp, "ti": ti, "td": td, "overshoot": overshoot}

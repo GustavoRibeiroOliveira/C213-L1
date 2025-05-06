@@ -2,6 +2,7 @@ import base64
 import io
 import os
 import matplotlib
+
 matplotlib.use("Agg")  # Usa backend sem GUI
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,10 +20,8 @@ from app.utils import (
 from config import DESKTOP_FOLDER
 
 
-
 def home_logic():
 
-    # Carregar o dataset da mesma pasta
     time_dataset, step, output_dataset = carregar_dataset()
 
     # Calcular os parâmetros para os diferentes métodos de identificação
@@ -59,28 +58,16 @@ def home_logic():
 
     # Simular a resposta ao degrau do modelo FOPDT (modelo exato)
     t_sim_fopdt, y_sim_fopdt = step_response(fopdt_model_with_delay, T=time_dataset)
+    y_sim_fopdt = y_sim_fopdt * step
 
     # Simular a resposta ao degrau do sistema identificado
     t_sim_ident, y_sim_ident = step_response(f_identification, T=time_dataset)
-
-    # Interpolar para alinhar os tempos simulados com os reais
-    interp_fopdt = interp1d(
-        t_sim_fopdt, y_sim_fopdt, kind="linear", fill_value="extrapolate"
-    )
-    y_sim_fopdt_interp = interp_fopdt(time_dataset)
-
-    interp_ident = interp1d(
-        t_sim_ident, y_sim_ident, kind="linear", fill_value="extrapolate"
-    )
-    y_sim_ident_interp = interp_ident(time_dataset)
-
-    # Ajustar nível inicial do output real
-    # output_ref = output_dataset - output_dataset[0]
+    y_sim_ident = y_sim_ident * step
 
     # Criar o gráfico
     plt.figure(figsize=(6, 4))
-    plt.plot(time_dataset, y_sim_fopdt_interp, "b--", label="Referencia")
-    plt.plot(time_dataset, y_sim_ident_interp, "m--", label=f"Modelo ({best_method})")
+    plt.plot(time_dataset, y_sim_fopdt, "b", label="Referencia")
+    plt.plot(time_dataset, y_sim_ident, "m--", label=f"Modelo ({best_method})")
 
     plt.title(f"Gráfico do Método: {best_method}")
     plt.legend()
@@ -88,8 +75,8 @@ def home_logic():
     plt.ylabel("Temperatura (C°)")
     plt.ylim(
         [
-            np.min([y_sim_fopdt_interp, y_sim_ident_interp]) - 1,
-            np.max([y_sim_fopdt_interp, y_sim_ident_interp]) + 1,
+            np.min([y_sim_fopdt, y_sim_ident]) - 1,
+            np.max([y_sim_fopdt, y_sim_ident]) + 10,
         ]
     )
     plt.grid(True)
@@ -103,10 +90,10 @@ def home_logic():
     image_base64 = base64.b64encode(buf.read()).decode("utf-8")
     buf.close()
 
-    return image_base64, k, tau, theta
+    return image_base64, k, tau, theta, round(eqms[best_method], 3), time_dataset[-1]
 
 
-def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
+def controladores_pid(k, tau, theta, method, last_time, kp=None, ti=None, td=None):
     nomes_dos_metodos = {
         "zn": "Ziegler Nichols",
         "chr": "CHR (com sobrevalor)",
@@ -117,7 +104,7 @@ def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
     elif method == "chr":
         kp, ti, td = chr_com_sobre_valor(k, tau, theta)
 
-    overshoot, t, yout = calcular_overshoot(kp, ti, td, k, tau, theta)
+    overshoot, t, yout = calcular_overshoot(kp, ti, td, k, tau, theta, last_time)
 
     # Plotar o gráfico
     plt.figure(figsize=(6, 4))
