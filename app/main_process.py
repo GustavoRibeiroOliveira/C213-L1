@@ -11,7 +11,6 @@ import numpy as np
 from control import pade, series, step_response, tf
 
 from app.utils import (
-    calcular_overshoot,
     carregar_dataset,
     chr_com_sobre_valor,
     identificar_fopdt,
