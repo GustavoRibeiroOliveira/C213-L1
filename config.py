@@ -28,7 +28,12 @@ def get_music_folder():
         str: O caminho da pasta de música.
     """
     home = os.path.expanduser("~")
-    possible_names = ["Music", "Música", "Músicas", "Musicas"]  # Adicionei "Musicas" e "Music"
+    possible_names = [
+        "Music",
+        "Música",
+        "Músicas",
+        "Musicas",
+    ]  # Adicionei "Musicas" e "Music"
 
     for name in possible_names:
         music_path = os.path.join(home, name)

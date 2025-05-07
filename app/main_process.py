@@ -1,6 +1,7 @@
 import base64
 import io
 import os
+
 import matplotlib
 from control import feedback
 
@@ -24,8 +25,12 @@ def home_logic():
     time_dataset, step, output_dataset = carregar_dataset()
 
     # Calcular os parâmetros para os diferentes métodos
-    k_sun, tau_sun, theta_sun, eqm_sun = identification_process(step, time_dataset, output_dataset, "Sundaresan")
-    k_smi, tau_smi, theta_smi, eqm_smi = identification_process(step, time_dataset, output_dataset, "Smith")
+    k_sun, tau_sun, theta_sun, eqm_sun = identification_process(
+        step, time_dataset, output_dataset, "Sundaresan"
+    )
+    k_smi, tau_smi, theta_smi, eqm_smi = identification_process(
+        step, time_dataset, output_dataset, "Smith"
+    )
 
     # Modelo FOPDT real
     fopdt_model_with_delay = identificar_fopdt(step, time_dataset, output_dataset)
@@ -40,7 +45,7 @@ def home_logic():
     # Dicionários para acesso dinâmico
     params = {
         "Sundaresan": (k_sun, tau_sun, theta_sun),
-        "Smith": (k_smi, tau_smi, theta_smi)
+        "Smith": (k_smi, tau_smi, theta_smi),
     }
 
     # -------- MELHOR MÉTODO --------
@@ -72,7 +77,9 @@ def home_logic():
     buf_open.seek(0)
     image_base64_open = base64.b64encode(buf_open.read()).decode("utf-8")
     buf_open.close()
-    plt.savefig(os.path.join(DESKTOP_FOLDER, f"{best_method}_malha_aberta.png"))  # Salvar no desktop
+    plt.savefig(
+        os.path.join(DESKTOP_FOLDER, f"{best_method}_malha_aberta.png")
+    )  # Salvar no desktop
 
     # Gráfico de malha fechada
     plt.figure(figsize=(6, 4))
@@ -88,7 +95,9 @@ def home_logic():
     buf_closed.seek(0)
     image_base64_closed = base64.b64encode(buf_closed.read()).decode("utf-8")
     buf_closed.close()
-    plt.savefig(os.path.join(DESKTOP_FOLDER, f"{best_method}_malha_fechada.png"))  # Salvar no desktop
+    plt.savefig(
+        os.path.join(DESKTOP_FOLDER, f"{best_method}_malha_fechada.png")
+    )  # Salvar no desktop
 
     # -------- OUTRO MÉTODO (APENAS SALVAR) --------
     k_o, tau_o, theta_o = params[other_method]
@@ -129,16 +138,14 @@ def home_logic():
 
     # -------- RETORNO --------
     return (
-        image_base64_open,        # imagem do gráfico malha aberta
-        image_base64_closed,      # imagem do gráfico da malha fechada
+        image_base64_open,  # imagem do gráfico malha aberta
+        image_base64_closed,  # imagem do gráfico da malha fechada
         round(k, 3),
         round(tau, 3),
         round(theta, 3),
         round(eqms[best_method], 3),
-        time_dataset[-1]
+        time_dataset[-1],
     )
-
-
 
 
 def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
@@ -176,7 +183,12 @@ def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
     # Plot
     plt.figure(figsize=(6, 4))
     plt.plot(t, y, label="PID", color="blue")
-    plt.axhline(y_max, linestyle="--", color="red", label=f"Overshoot ~ {round((y_max - 1) * 100, 2)}%")
+    plt.axhline(
+        y_max,
+        linestyle="--",
+        color="red",
+        label=f"Overshoot ~ {round((y_max - 1) * 100, 2)}%",
+    )
     plt.grid(True)
     plt.legend(loc="lower right")
     plt.xlabel("Time (seconds)")

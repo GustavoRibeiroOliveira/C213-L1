@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, jsonify, render_template, request
 
 from app.main_process import controladores_pid, home_logic
 
@@ -18,7 +18,7 @@ def home():
         tau=tau,
         theta=theta,
         eqm=eqm,
-        last_time=last_time
+        last_time=last_time,
     )
 
 
@@ -40,7 +40,13 @@ def gerar_pid():
         td = None
 
     img_base64, kp, ti, td, overshoot = controladores_pid(
-        k, tau, theta, method, kp, ti, td,
+        k,
+        tau,
+        theta,
+        method,
+        kp,
+        ti,
+        td,
     )
     return jsonify(
         {"image": img_base64, "kp": kp, "ti": ti, "td": td, "overshoot": overshoot}

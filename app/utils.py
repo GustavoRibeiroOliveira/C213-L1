@@ -2,7 +2,7 @@ import os
 import sys
 
 import numpy as np
-from control import pade, series, step_response, tf, feedback
+from control import feedback, pade, series, step_response, tf
 from scipy.io import loadmat
 
 
@@ -259,21 +259,21 @@ def chr_com_sobre_valor(k, tau, theta, sobre_valor=1.2):
     return kp, ti, td
 
 
-def calcular_overshoot(kp, ti, td, k, tau, theta):
-    # Criar o controlador PID: Kp * (1 + 1/(Ti*s) + Td*s)
-    numerador_PID = [kp * td, kp, kp / ti]
-    denominador_PID = [1, 0]
-    PID = tf(numerador_PID, denominador_PID)
-
-    # Sistema em malha fechada
-    malha_fechada = feedback(series(PID, sys), 1)
-
-    # Resposta ao degrau
-    t, y = step_response(malha_fechada)
-
-    # Cálculo do overshoot
-    max_value = np.max(yout)
-    final_value = yout[-1]
-    overshoot = (max_value - final_value) / final_value * 100 if final_value != 0 else 0
-
-    return overshoot, tempo, yout
+# def calcular_overshoot(kp, ti, td, k, tau, theta):
+#     # Criar o controlador PID: Kp * (1 + 1/(Ti*s) + Td*s)
+#     numerador_PID = [kp * td, kp, kp / ti]
+#     denominador_PID = [1, 0]
+#     PID = tf(numerador_PID, denominador_PID)
+#
+#     # Sistema em malha fechada
+#     malha_fechada = feedback(series(PID, sys), 1)
+#
+#     # Resposta ao degrau
+#     t, y = step_response(malha_fechada)
+#
+#     # Cálculo do overshoot
+#     max_value = np.max(yout)
+#     final_value = yout[-1]
+#     overshoot = (max_value - final_value) / final_value * 100 if final_value != 0 else 0
+#
+#     return overshoot, tempo, yout

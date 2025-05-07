@@ -2,8 +2,8 @@ import os
 
 import webview
 
-from config import HOST, PORT
 from app import create_app, socketio
+from config import HOST, PORT
 
 app = create_app()
 
