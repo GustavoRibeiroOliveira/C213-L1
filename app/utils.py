@@ -65,7 +65,7 @@ def identificar_fopdt(step, time_dataset, output_dataset):
     g = tf([K], [tau, 1])  # G(s) = K / (τs + 1)
 
     # Aproximação de Padé para o atraso
-    num_delay, den_delay = pade(theta, 6)
+    num_delay, den_delay = pade(theta, 1)
     delay = tf(num_delay, den_delay)
 
     # Sistema com atraso aproximado

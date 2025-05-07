@@ -21,114 +21,124 @@ from config import DESKTOP_FOLDER
 
 
 def home_logic():
-
     time_dataset, step, output_dataset = carregar_dataset()
 
-    # Calcular os parâmetros para os diferentes métodos de identificação
-    k_sun, tau_sun, theta_sun, eqm_sun = identification_process(
-        step, time_dataset, output_dataset, "Sundaresan"
-    )
-    k_smi, tau_smi, theta_smi, eqm_smi = identification_process(
-        step, time_dataset, output_dataset, "Smith"
-    )
+    # Calcular os parâmetros para os diferentes métodos
+    k_sun, tau_sun, theta_sun, eqm_sun = identification_process(step, time_dataset, output_dataset, "Sundaresan")
+    k_smi, tau_smi, theta_smi, eqm_smi = identification_process(step, time_dataset, output_dataset, "Smith")
 
-    # Obter o modelo FOPDT com atraso via Padé (modelo exato)
+    # Modelo FOPDT real
     fopdt_model_with_delay = identificar_fopdt(step, time_dataset, output_dataset)
+    t_sim_fopdt, y_sim_fopdt = step_response(fopdt_model_with_delay, T=time_dataset)
+    y_sim_fopdt *= step
 
-    # Comparar qual método gerou o menor EQM
+    # Seleção do melhor método
     eqms = {"Sundaresan": eqm_sun, "Smith": eqm_smi}
     best_method = min(eqms, key=eqms.get)
+    other_method = "Smith" if best_method == "Sundaresan" else "Sundaresan"
 
-    # Definir o sistema conforme o melhor método
-    if best_method == "Sundaresan":
-        f_identification = tf([k_sun], [tau_sun, 1])
-        num_delay, den_delay = pade(theta_sun, 2)
-        k = round(k_sun, 3)
-        tau = round(tau_sun, 3)
-        theta = round(theta_sun, 3)
-    else:  # Smith
-        f_identification = tf([k_smi], [tau_smi, 1])
-        num_delay, den_delay = pade(theta_smi, 2)
-        k = round(k_smi, 3)
-        tau = round(tau_smi, 3)
-        theta = round(theta_smi, 3)
+    # Dicionários para acesso dinâmico
+    params = {
+        "Sundaresan": (k_sun, tau_sun, theta_sun),
+        "Smith": (k_smi, tau_smi, theta_smi)
+    }
 
-    delay = tf(num_delay, den_delay)
-    f_identification = series(delay, f_identification)
+    # -------- MELHOR MÉTODO --------
+    k, tau, theta = params[best_method]
+    f_identification = tf([k], [tau, 1])
+    num_delay, den_delay = pade(theta, 6)
+    f_identification = series(tf(num_delay, den_delay), f_identification)
 
-    # Simular a resposta ao degrau do modelo FOPDT (modelo exato)
-    t_sim_fopdt, y_sim_fopdt = step_response(fopdt_model_with_delay, T=time_dataset)
-    y_sim_fopdt = y_sim_fopdt * step
+    # Malha aberta
+    t_open, y_open = step_response(f_identification, T=time_dataset)
+    y_open *= step
 
-    # Simular a resposta ao degrau do sistema identificado
-    t_sim_ident, y_sim_ident = step_response(f_identification, T=time_dataset)
-    y_sim_ident = y_sim_ident * step
+    # Malha fechada
+    system_closed = feedback(f_identification, 1)
+    t_closed, y_closed = step_response(system_closed, T=time_dataset)
+    y_closed *= step
 
-    # Criar o gráfico
+    # Gráfico de malha aberta
     plt.figure(figsize=(6, 4))
-    plt.plot(time_dataset, y_sim_fopdt, "b", label="Referencia")
-    plt.plot(time_dataset, y_sim_ident, "m--", label=f"Modelo ({best_method})")
-
-    plt.title(f"Gráfico do Método: {best_method}")
-    plt.legend()
+    plt.plot(time_dataset, y_sim_fopdt, "b", label="Referência")
+    plt.plot(t_open, y_open, "m--", label=best_method)
+    plt.title(f"Malha Aberta - {best_method}")
     plt.xlabel("Tempo (s)")
     plt.ylabel("Temperatura (C°)")
-    plt.ylim(
-        [
-            np.min([y_sim_fopdt, y_sim_ident]) - 1,
-            np.max([y_sim_fopdt, y_sim_ident]) + 10,
-        ]
-    )
-    plt.grid(True)
-    # Salvar o gráfico na área de trabalho
-    plt.savefig(os.path.join(DESKTOP_FOLDER, f"{best_method}.png"))
-
-    # Salvar o gráfico em um buffer
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png")
-    buf.seek(0)
-    image_base64 = base64.b64encode(buf.read()).decode("utf-8")
-    buf.close()
-
-    f_identification = tf([k_sun], [tau_sun, 1])
-    num_delay, den_delay = pade(theta_sun, 2)
-
-    delay = tf(num_delay, den_delay)
-    f_identification = series(delay, f_identification)
-
-    # Simular a resposta ao degrau do modelo FOPDT (modelo exato)
-    t_sim_fopdt, y_sim_fopdt = step_response(fopdt_model_with_delay, T=time_dataset)
-    y_sim_fopdt = y_sim_fopdt * step
-
-    # Simular a resposta ao degrau do sistema identificado
-    t_sim_ident, y_sim_ident = step_response(f_identification, T=time_dataset)
-    y_sim_ident = y_sim_ident * step
-
-    # Criar o gráfico
-    plt.figure(figsize=(6, 4))
-    plt.plot(time_dataset, y_sim_fopdt, "b", label="Referencia")
-    plt.plot(time_dataset, y_sim_ident, "m--", label=f"Modelo Sundaresan")
-
-    plt.title(f"K: {k_sun:.2f}, Tau: {tau_sun:.2f}, Theta: {theta_sun:.2f}, Eqm: {eqms['Sundaresan']:.2f}")
     plt.legend()
+    plt.grid(True)
+    buf_open = io.BytesIO()
+    plt.savefig(buf_open, format="png")
+    buf_open.seek(0)
+    image_base64_open = base64.b64encode(buf_open.read()).decode("utf-8")
+    buf_open.close()
+    plt.savefig(os.path.join(DESKTOP_FOLDER, f"{best_method}_malha_aberta.png"))  # Salvar no desktop
+
+    # Gráfico de malha fechada
+    plt.figure(figsize=(6, 4))
+    plt.plot(time_dataset, y_sim_fopdt, "b", label="Referência")
+    plt.plot(t_closed, y_closed, "g--", label=best_method)
+    plt.title(f"Malha Fechada - {best_method}")
     plt.xlabel("Tempo (s)")
     plt.ylabel("Temperatura (C°)")
-    plt.ylim(
-        [
-            np.min([y_sim_fopdt, y_sim_ident]) - 1,
-            np.max([y_sim_fopdt, y_sim_ident]) + 10,
-        ]
-    )
+    plt.legend()
     plt.grid(True)
-    # Salvar o gráfico na área de trabalho
-    plt.savefig(os.path.join(DESKTOP_FOLDER, f"Sundaresan.png"))
+    buf_closed = io.BytesIO()
+    plt.savefig(buf_closed, format="png")
+    buf_closed.seek(0)
+    image_base64_closed = base64.b64encode(buf_closed.read()).decode("utf-8")
+    buf_closed.close()
+    plt.savefig(os.path.join(DESKTOP_FOLDER, f"{best_method}_malha_fechada.png"))  # Salvar no desktop
 
-    # Salvar o gráfico em um buffer
-    buf = io.BytesIO()
-    plt.savefig(buf, format="png")
-    buf.close()
+    # -------- OUTRO MÉTODO (APENAS SALVAR) --------
+    k_o, tau_o, theta_o = params[other_method]
+    f_other = tf([k_o], [tau_o, 1])
+    num_d_o, den_d_o = pade(theta_o, 2)
+    f_other = series(tf(num_d_o, den_d_o), f_other)
 
-    return image_base64, k, tau, theta, round(eqms[best_method], 3), time_dataset[-1]
+    t_other_open, y_other_open = step_response(f_other, T=time_dataset)
+    y_other_open *= step
+
+    system_closed_other = feedback(f_other, 1)
+    t_other_closed, y_other_closed = step_response(system_closed_other, T=time_dataset)
+    y_other_closed *= step
+
+    # Malha aberta - outro método
+    plt.figure(figsize=(6, 4))
+    plt.plot(time_dataset, y_sim_fopdt, "b", label="Referência")
+    plt.plot(t_other_open, y_other_open, "m--", label=other_method)
+    plt.title(f"Malha Aberta - {other_method}")
+    plt.xlabel("Tempo (s)")
+    plt.ylabel("Temperatura (C°)")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(DESKTOP_FOLDER, f"{other_method}_malha_aberta.png"))
+
+    # Malha fechada - outro método
+    plt.figure(figsize=(6, 4))
+    plt.plot(time_dataset, y_sim_fopdt, "b", label="Referência")
+    plt.plot(t_other_closed, y_other_closed, "g--", label=other_method)
+    plt.title(f"Malha Fechada - {other_method}")
+    plt.xlabel("Tempo (s)")
+    plt.ylabel("Temperatura (C°)")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(DESKTOP_FOLDER, f"{other_method}_malha_fechada.png"))
+
+    # -------- RETORNO --------
+    return (
+        image_base64_open,        # imagem do gráfico malha aberta
+        image_base64_closed,      # imagem do gráfico da malha fechada
+        round(k, 3),
+        round(tau, 3),
+        round(theta, 3),
+        round(eqms[best_method], 3),
+        time_dataset[-1]
+    )
+
+
 
 
 def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
@@ -149,7 +159,7 @@ def controladores_pid(k, tau, theta, method, kp=None, ti=None, td=None):
     # Sistema de processo (sem controle)
     G = tf([k], [tau, 1])
 
-    num_delay, den_delay = pade(theta, 6)
+    num_delay, den_delay = pade(theta, 2)
     delay = tf(num_delay, den_delay)
 
     # Sistema com atraso

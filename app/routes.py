@@ -7,11 +7,18 @@ bp = Blueprint("main", __name__)
 
 @bp.route("/")
 def home():
-    # Obter a imagem em base64 gerada pela lógica
-    image_base64, k, tau, theta, eqm, last_time = home_logic()
+    # Obter as imagens geradas pela lógica (malha aberta e malha fechada)
+    image_open_base64, image_closed_base64, k, tau, theta, eqm, last_time = home_logic()
 
     return render_template(
-        "home.html", image_base64=image_base64, k=k, tau=tau, theta=theta, eqm=eqm, last_time=last_time
+        "home.html",
+        image_open_base64=image_open_base64,
+        image_closed_base64=image_closed_base64,
+        k=k,
+        tau=tau,
+        theta=theta,
+        eqm=eqm,
+        last_time=last_time
     )
 
 

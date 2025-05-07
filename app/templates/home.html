@@ -35,9 +35,21 @@
                 <div class="item"><p><strong>Tau (τ):</strong> <span id="tau">{{ tau }}</span></p></div>
                 <div class="item"><p><strong>Theta (θ):</strong> <span id="theta">{{ theta }}</span></p></div>
                 <div class="item"><p><strong>EQM:</strong> <span id="eqm">{{ eqm }}</span></p></div>
-                <div class="item" style="display: none"><p><strong>last_time:</strong> <span id="last_time">{{ last_time }}</span></p></div>
+                <div class="item" style="display: none"><p><strong>last_time:</strong> <span
+                        id="last_time">{{ last_time }}</span></p></div>
             </div>
-            <img src="data:image/png;base64,{{ image_base64 }}" alt="Gráfico">
+
+            <!-- Container para os gráficos -->
+            <div id="grafico-container" data-open="{{ image_open_base64 }}" data-closed="{{ image_closed_base64 }}">
+                <img id="grafico" src="data:image/png;base64,{{ image_open_base64 }}" alt="Gráfico">
+            </div>
+
+            <!-- Botão para alternar -->
+            <div id="toggle-button">
+                <svg id="seta" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+            </div>
         </div>
         <div id="tab-1-content" style="display: none;">
             <div id="pid-buttons">
@@ -46,21 +58,21 @@
                 <button class="btn" id="manual" onclick="gerarPID('manual')">Manual</button>
             </div>
             <div id="pid-resultados"></div>
-{#            <button class="icon-btn" id="download-btn" title="Baixar Gráfico">#}
-{#                <svg width="28px" height="28px" viewBox="0 0 24.00 24.00" fill="none" xmlns="http://www.w3.org/2000/svg"#}
-{#                     stroke="#ffffff" transform="matrix(1, 0, 0, 1, 0, 0)rotate(0)">#}
-{#                    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>#}
-{#                    <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC"#}
-{#                       stroke-width="0.672"></g>#}
-{#                    <g id="SVGRepo_iconCarrier">#}
-{#                        <path d="M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15"#}
-{#                              stroke="#ffffff" stroke-width="1.392" stroke-linecap="round"#}
-{#                              stroke-linejoin="round"></path>#}
-{#                        <path d="M12 3V16M12 16L16 11.625M12 16L8 11.625" stroke="#ffffff" stroke-width="1.392"#}
-{#                              stroke-linecap="round" stroke-linejoin="round"></path>#}
-{#                    </g>#}
-{#                </svg>#}
-{#            </button>#}
+            {#            <button class="icon-btn" id="download-btn" title="Baixar Gráfico">#}
+            {#                <svg width="28px" height="28px" viewBox="0 0 24.00 24.00" fill="none" xmlns="http://www.w3.org/2000/svg"#}
+            {#                     stroke="#ffffff" transform="matrix(1, 0, 0, 1, 0, 0)rotate(0)">#}
+            {#                    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>#}
+            {#                    <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC"#}
+            {#                       stroke-width="0.672"></g>#}
+            {#                    <g id="SVGRepo_iconCarrier">#}
+            {#                        <path d="M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15"#}
+            {#                              stroke="#ffffff" stroke-width="1.392" stroke-linecap="round"#}
+            {#                              stroke-linejoin="round"></path>#}
+            {#                        <path d="M12 3V16M12 16L16 11.625M12 16L8 11.625" stroke="#ffffff" stroke-width="1.392"#}
+            {#                              stroke-linecap="round" stroke-linejoin="round"></path>#}
+            {#                    </g>#}
+            {#                </svg>#}
+            {#            </button>#}
         </div>
     </div>
 </div>
@@ -84,4 +96,10 @@
     </div>
 </div>
 </body>
+
+<script>
+    window.IMAGE_OPEN = "data:image/png;base64,{{ image_open_base64 }}";
+    window.IMAGE_CLOSED = "data:image/png;base64,{{ image_closed_base64 }}";
+</script>
+
 </html>

@@ -1,5 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
+    let graficoAberto = true;
 
+    function alternarGrafico() {
+        const grafico = document.getElementById("grafico");
+        const seta = document.getElementById("seta");
+
+        if (graficoAberto) {
+            grafico.src = window.IMAGE_CLOSED;
+            seta.style.transform = "rotate(180deg)";
+        } else {
+            grafico.src = window.IMAGE_OPEN;
+            seta.style.transform = "rotate(0deg)";
+        }
+
+        graficoAberto = !graficoAberto;
+    }
+
+    document.getElementById("toggle-button").addEventListener("click", alternarGrafico);
 });
 
 function switchTab(index) {
